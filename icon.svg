@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img"
+     aria-label="A crystal ball on its stand">
+  <rect width="512" height="512" rx="96" fill="#241a12"/>
+  <defs>
+    <radialGradient id="glass" cx="38%" cy="30%" r="72%">
+      <stop offset="0%" stop-color="#5d4630"/>
+      <stop offset="66%" stop-color="#33251a"/>
+      <stop offset="100%" stop-color="#241a12"/>
+    </radialGradient>
+    <clipPath id="orb"><circle cx="256" cy="208" r="134"/></clipPath>
+  </defs>
+  <circle cx="256" cy="208" r="134" fill="url(#glass)"/>
+  <g clip-path="url(#orb)" opacity="0.55">
+    <circle cx="204" cy="172" r="84" fill="#8c6a45"/>
+    <circle cx="306" cy="230" r="92" fill="#a08059"/>
+    <circle cx="250" cy="134" r="68" fill="#c0a074"/>
+  </g>
+  <circle cx="256" cy="208" r="134" fill="none" stroke="#e8b34a" stroke-width="16"/>
+  <path d="M196 330 A60 14 0 0 1 316 330 L304 352 C304 366 348 370 372 380
+           A116 22 0 0 1 140 380 C164 370 208 366 208 352 Z"
+        fill="#4a3421" stroke="#e8b34a" stroke-width="15"/>
+</svg>

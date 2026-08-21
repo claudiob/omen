@@ -1,0 +1,477 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Omen — ask your data a question</title>
+<meta name="description" content="Staff ask Claude a question about the data an app holds; Claude
+writes the SQL and Rails runs it read-only. A Ruby gem of models and the reading, and no pages.">
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" href="favicon-96x96.png" type="image/png" sizes="96x96">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="site.webmanifest">
+<meta property="og:title" content="Omen">
+<meta property="og:description" content="Ask your data a question. Claude reads your schema and
+writes the one PostgreSQL statement that settles it.">
+<meta property="og:type" content="website">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=Public+Sans:wght@400;500&display=swap">
+  <style>
+    :root {
+      --ink: oklch(0.95 0.01 60); --dim: oklch(0.745 0.02 60); --bg: oklch(0.15 0.028 40);
+      --panel: oklch(0.19 0.03 40); --line: oklch(0.31 0.035 40);
+      --gold: oklch(0.83 0.13 82); --gold-dim: oklch(0.60 0.09 82); --gold-lit: oklch(0.92 0.11 82);
+      --halo: oklch(0.55 0.10 82 / 0.5);
+      --glass: radial-gradient(circle at 36% 28%, oklch(0.44 0.05 40) 0%,
+               oklch(0.23 0.04 40) 66%, oklch(0.17 0.03 40) 100%);
+      --s1: oklch(0.66 0.05 40 / 0.55); --s2: oklch(0.72 0.04 60 / 0.45);
+      --s3: oklch(0.82 0.03 80 / 0.38); --s4: oklch(0.60 0.06 30 / 0.5);
+      --table: oklch(0.22 0.035 40); --shade: oklch(0.12 0.022 40); --stand: oklch(0.29 0.05 82);
+      --head: 'Bricolage Grotesque', ui-sans-serif, system-ui, sans-serif;
+      --text: 'Public Sans', ui-sans-serif, system-ui, sans-serif;
+    }
+    * { box-sizing: border-box }
+    body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--text) }
+    h1, h3, .display { font-family: var(--head); font-weight: 600; letter-spacing: -0.02em }
+    a { color: var(--gold); text-decoration: none; border-bottom: 1px solid var(--gold-dim) }
+    a:hover { color: var(--gold-lit) }
+    code { font-family: ui-monospace, Menlo, monospace; font-size: 0.92em;
+           background: var(--panel); border: 1px solid var(--line); border-radius: 3px;
+           padding: 2px 7px; color: var(--ink) }
+    .label { font-size: 11px; letter-spacing: 0.26em; text-transform: uppercase;
+             font-weight: 500; color: var(--gold) }
+    .plain { font-size: 12.5px; letter-spacing: 0.04em; color: var(--dim) }
+    .quiet { color: var(--dim) }
+    .pad { padding-left: clamp(24px, 4.5vw, 88px); padding-right: clamp(24px, 4.5vw, 88px) }
+    .card { background: var(--panel); border: 1px solid var(--line); border-radius: 6px;
+            padding: 26px 24px }
+    svg .ln { fill: none; stroke: var(--gold); stroke-width: 1.2;
+              stroke-linecap: round; stroke-linejoin: round }
+
+    .body { display: grid; grid-template-columns: minmax(0, 1fr) 430px;
+            gap: clamp(36px, 4.5vw, 92px); align-items: start }
+    @media (max-width: 1100px) { .body { grid-template-columns: minmax(0, 1fr) }
+                                 .stage { display: none } }
+    h1 { font-size: clamp(38px, 4.7vw, 74px); line-height: 1.03; margin: 0 0 24px }
+    @media (min-width: 1280px) { h1 { white-space: nowrap } }
+    .lede { font-size: clamp(16.5px, 1.2vw, 20px); line-height: 1.6; margin: 0 0 7px }
+    .lede:last-of-type { margin-bottom: 0 }
+
+    /* ---- the reading: a ball on its stand, told on a timer ---- */
+    .stage { position: sticky; top: 36px }
+    .rig { position: relative; max-width: 400px; margin: 20px auto 0 }
+    .ball { position: relative; z-index: 1; width: 100%; aspect-ratio: 1; border-radius: 50%;
+            background: var(--glass); margin-bottom: -26px;
+            box-shadow: 0 0 0 1px var(--gold-dim), 0 30px 60px -26px var(--halo) }
+    /* the stand draws OVER the glass, so the ball reads as sitting down inside the cradle */
+    .stand { display: block; position: relative; z-index: -2; width: 100%; height: auto }
+    .sheen { position: absolute; left: 16%; top: 13%; width: 26%; height: 15%;
+             border-radius: 50%; background: oklch(0.99 0.01 60 / 0.14);
+             transform: rotate(-26deg) }
+    .veil { position: absolute; inset: 0; border-radius: 50%; overflow: hidden }
+    .veil i { position: absolute; border-radius: 50%; filter: blur(20px); display: block }
+    .veil i:nth-child(1) { left: -6%; top: 6%; width: 62%; height: 62%; background: var(--s1) }
+    .veil i:nth-child(2) { right: -10%; top: 22%; width: 70%; height: 70%; background: var(--s2) }
+    .veil i:nth-child(3) { left: 22%; top: -10%; width: 54%; height: 54%; background: var(--s3) }
+    .veil i:nth-child(4) { left: 12%; bottom: -8%; width: 66%; height: 66%; background: var(--s4) }
+    .inside { position: absolute; inset: 12%; display: flex; flex-direction: column;
+              align-items: center; justify-content: center; gap: 15px; text-align: center }
+    .sql { font-family: ui-monospace, Menlo, monospace; font-size: 13px; line-height: 1.7;
+           color: var(--ink) }
+    .value { font-family: var(--head); font-weight: 800; font-size: clamp(28px, 3.2vw, 44px);
+             letter-spacing: -0.03em; color: var(--gold); line-height: 1 }
+    .question { font-size: 25px; line-height: 1.3; margin: 12px 0 0; min-height: 70px; }
+    .cap { margin: 16px 0 0 }
+
+    /* the smoke never stops moving; the phase decides whether it is thick or spent */
+    @keyframes drift { 50% { transform: translate(16px, -18px) scale(1.14) } }
+    .veil i { animation: drift 11s ease-in-out infinite }
+    .veil i:nth-child(2) { animation-duration: 14s; animation-delay: -3s }
+    .veil i:nth-child(3) { animation-duration: 9s; animation-delay: -6s }
+    .veil i:nth-child(4) { animation-duration: 17s; animation-delay: -1s }
+
+    /* veiled -> the smoke thins and the statement, then the answer, surface -> it gathers again */
+    .veil { opacity: 1; transform: scale(1); transition: opacity 2.4s ease, transform 2.4s ease }
+    .sql, .value, .cap { opacity: 0; transition: opacity 0.9s ease }
+    [data-phase="open"] .veil { opacity: 0.05; transform: scale(1.45) }
+    [data-phase="open"] .sql { opacity: 1; transition-delay: 0.6s }
+    [data-phase="open"] .value { opacity: 1; transition-delay: 1.5s }
+    [data-phase="open"] .cap { opacity: 1; transition-delay: 1.5s }
+    @media (prefers-reduced-motion: reduce) {
+      .veil i { animation: none }
+      .veil, .sql, .value, .cap { transition: none }
+    }
+
+    /* one reading is told at a time; the deck holds the other eleven */
+    .set { display: none; text-align: center } .set:first-child { display: block }
+    .deck[data-pick] .set { display: none }
+    .deck[data-pick="0"] .set:nth-child(1), .deck[data-pick="1"] .set:nth-child(2),
+    .deck[data-pick="2"] .set:nth-child(3), .deck[data-pick="3"] .set:nth-child(4),
+    .deck[data-pick="4"] .set:nth-child(5), .deck[data-pick="5"] .set:nth-child(6),
+    .deck[data-pick="6"] .set:nth-child(7), .deck[data-pick="7"] .set:nth-child(8),
+    .deck[data-pick="8"] .set:nth-child(9), .deck[data-pick="9"] .set:nth-child(10),
+    .deck[data-pick="10"] .set:nth-child(11), .deck[data-pick="11"] .set:nth-child(12)
+      { display: block }
+  </style>
+</head>
+<body>
+<div>
+
+  <div class="pad" style="padding-top: 24px; padding-bottom: 24px; display: flex;
+              justify-content: space-between; align-items: center; gap: 20px;
+              border-bottom: 1px solid var(--line)">
+    <span class="display" style="font-size: 19px; letter-spacing: 0.02em">Omen</span>
+    <span style="display: flex; gap: 26px">
+      <a href="https://github.com/claudiob/omen" style="font-size: 14.5px">Source code</a>
+      <a href="https://rubydoc.info/gems/omen" style="font-size: 14.5px">Documentation</a>
+    </span>
+  </div>
+
+  <div class="pad body" style="padding-top: clamp(48px, 7vh, 92px); padding-bottom: 72px">
+
+    <div>
+      <h1>Ask your data a question.</h1>
+      <p class="lede quiet">Claude reads your schema and generates the one PostgreSQL statement
+        that settles it.</p>
+      <p class="lede quiet">Omen runs that statement read-only in Rails and draws the rows. Your
+        data never leaves the app.</p>
+      <div style="display: grid; gap: 18px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+                  margin: 54px 0 0">
+        <div class="card">
+          <svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true"><g class="ln">
+            <rect x="5" y="6" width="20" height="18" rx="2"/><path d="M5 12h20"/>
+            <path d="M12 12v12M19 12v12"/></g></svg>
+          <h3 style="font-size: 19px; margin: 14px 0 8px">Your data never leaves</h3>
+          <p style="font-size: 14.5px; line-height: 1.65; margin: 0" class="quiet">Claude is shown
+            the shape of your database — its tables and their columns — and never a row of what they
+            hold. Nothing the statement returned is ever sent back.</p>
+        </div>
+        <div class="card">
+          <svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true"><g class="ln">
+            <path d="M3 15s5-7 12-7 12 7 12 7-5 7-12 7-12-7-12-7z"/><circle cx="15" cy="15" r="3.4"/>
+            <path d="M6 6l18 18"/></g></svg>
+          <h3 style="font-size: 19px; margin: 14px 0 8px">Your secrets stay secret</h3>
+          <p style="font-size: 14.5px; line-height: 1.65; margin: 0" class="quiet">Encrypted columns
+            are found by the table Postgres reports them from, so no alias launders one. Credentials
+            are refused outright, whatever is asked.</p>
+        </div>
+        <div class="card">
+          <svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true"><g class="ln">
+            <rect x="6" y="13" width="18" height="12" rx="2"/><path d="M10 13V9a5 5 0 0110 0v4"/>
+            <path d="M15 17v4"/></g></svg>
+          <h3 style="font-size: 19px; margin: 14px 0 8px">Nothing can be written</h3>
+          <p style="font-size: 14.5px; line-height: 1.65; margin: 0" class="quiet">The statement runs
+            as a Postgres role granted SELECT and nothing else, inside a read-only transaction. A
+            grant the database enforces, not a convention that could slip.</p>
+        </div>
+      </div>
+
+      <p class="lede quiet" style="margin-top: 34px">Install with <code>gem install omen</code> then
+        follow the <a href="https://github.com/claudiob/omen#configuration">configuration steps</a>.</p>
+    </div>
+
+    <div class="stage">
+      <div class="deck">
+        <div class="set">
+          <span class="label">Somebody asked</span>
+          <p class="display question">How many locations do we serve?</p>
+          <div class="rig">
+            <div class="ball">
+              <div class="veil"><i></i><i></i><i></i><i></i></div>
+              <div class="sheen"></div>
+              <div class="inside">
+                <div class="sql">SELECT count(*)<br>FROM locations</div>
+                <div class="value">1,284</div>
+              </div>
+            </div>
+            <svg class="stand" viewBox="0 0 300 100" aria-hidden="true">
+              <ellipse cx="150" cy="78" rx="142" ry="20" fill="var(--table)"/>
+              <ellipse cx="150" cy="74" rx="98" ry="13" fill="var(--shade)"/>
+              <path d="M108 20 A42 10 0 0 1 192 20 L178 44 C178 52 204 54 228 62
+                       A78 13 0 0 1 72 62 C96 54 122 52 122 44 Z"
+                    fill="var(--stand)" stroke="var(--gold)" stroke-width="0.5"/>
+            </svg>
+          </div>
+          <p class="label cap">1 row &middot; 12 ms</p>
+        </div>
+        <div class="set">
+          <span class="label">Somebody asked</span>
+          <p class="display question">Which weekday do people book on most?</p>
+          <div class="rig">
+            <div class="ball">
+              <div class="veil"><i></i><i></i><i></i><i></i></div>
+              <div class="sheen"></div>
+              <div class="inside">
+                <div class="sql">SELECT to_char(created_at, 'Day')<br>FROM bookings GROUP BY 1<br>ORDER BY count(*) DESC LIMIT 1</div>
+                <div class="value">Tuesday</div>
+              </div>
+            </div>
+            <svg class="stand" viewBox="0 0 300 100" aria-hidden="true">
+              <ellipse cx="150" cy="78" rx="142" ry="20" fill="var(--table)"/>
+              <ellipse cx="150" cy="74" rx="98" ry="13" fill="var(--shade)"/>
+              <path d="M108 20 A42 10 0 0 1 192 20 L178 44 C178 52 204 54 228 62
+                       A78 13 0 0 1 72 62 C96 54 122 52 122 44 Z"
+                    fill="var(--stand)" stroke="var(--gold)" stroke-width="0.5"/>
+            </svg>
+          </div>
+          <p class="label cap">1 row &middot; 34 ms</p>
+        </div>
+        <div class="set">
+          <span class="label">Somebody asked</span>
+          <p class="display question">What share of bookings ever found a provider?</p>
+          <div class="rig">
+            <div class="ball">
+              <div class="veil"><i></i><i></i><i></i><i></i></div>
+              <div class="sheen"></div>
+              <div class="inside">
+                <div class="sql">SELECT round(100.0 * count(*)<br>FILTER (WHERE matched_at IS NOT NULL)<br>/ count(*), 1) FROM bookings</div>
+                <div class="value">70.4%</div>
+              </div>
+            </div>
+            <svg class="stand" viewBox="0 0 300 100" aria-hidden="true">
+              <ellipse cx="150" cy="78" rx="142" ry="20" fill="var(--table)"/>
+              <ellipse cx="150" cy="74" rx="98" ry="13" fill="var(--shade)"/>
+              <path d="M108 20 A42 10 0 0 1 192 20 L178 44 C178 52 204 54 228 62
+                       A78 13 0 0 1 72 62 C96 54 122 52 122 44 Z"
+                    fill="var(--stand)" stroke="var(--gold)" stroke-width="0.5"/>
+            </svg>
+          </div>
+          <p class="label cap">1 row &middot; 41 ms</p>
+        </div>
+        <div class="set">
+          <span class="label">Somebody asked</span>
+          <p class="display question">Which state holds the most homes?</p>
+          <div class="rig">
+            <div class="ball">
+              <div class="veil"><i></i><i></i><i></i><i></i></div>
+              <div class="sheen"></div>
+              <div class="inside">
+                <div class="sql">SELECT s.code FROM homes h<br>JOIN states s ON s.id = h.state_id<br>GROUP BY 1 ORDER BY count(*) DESC LIMIT 1</div>
+                <div class="value">NY</div>
+              </div>
+            </div>
+            <svg class="stand" viewBox="0 0 300 100" aria-hidden="true">
+              <ellipse cx="150" cy="78" rx="142" ry="20" fill="var(--table)"/>
+              <ellipse cx="150" cy="74" rx="98" ry="13" fill="var(--shade)"/>
+              <path d="M108 20 A42 10 0 0 1 192 20 L178 44 C178 52 204 54 228 62
+                       A78 13 0 0 1 72 62 C96 54 122 52 122 44 Z"
+                    fill="var(--stand)" stroke="var(--gold)" stroke-width="0.5"/>
+            </svg>
+          </div>
+          <p class="label cap">1 row &middot; 58 ms</p>
+        </div>
+        <div class="set">
+          <span class="label">Somebody asked</span>
+          <p class="display question">How many providers finished a job last month?</p>
+          <div class="rig">
+            <div class="ball">
+              <div class="veil"><i></i><i></i><i></i><i></i></div>
+              <div class="sheen"></div>
+              <div class="inside">
+                <div class="sql">SELECT count(DISTINCT provider_id)<br>FROM jobs WHERE finished_at &gt;=<br>date_trunc('month', now()) - interval '1 month'</div>
+                <div class="value">47</div>
+              </div>
+            </div>
+            <svg class="stand" viewBox="0 0 300 100" aria-hidden="true">
+              <ellipse cx="150" cy="78" rx="142" ry="20" fill="var(--table)"/>
+              <ellipse cx="150" cy="74" rx="98" ry="13" fill="var(--shade)"/>
+              <path d="M108 20 A42 10 0 0 1 192 20 L178 44 C178 52 204 54 228 62
+                       A78 13 0 0 1 72 62 C96 54 122 52 122 44 Z"
+                    fill="var(--stand)" stroke="var(--gold)" stroke-width="0.5"/>
+            </svg>
+          </div>
+          <p class="label cap">1 row &middot; 19 ms</p>
+        </div>
+        <div class="set">
+          <span class="label">Somebody asked</span>
+          <p class="display question">How many contacts have no phone number?</p>
+          <div class="rig">
+            <div class="ball">
+              <div class="veil"><i></i><i></i><i></i><i></i></div>
+              <div class="sheen"></div>
+              <div class="inside">
+                <div class="sql">SELECT count(*) FROM contacts<br>WHERE phone IS NULL</div>
+                <div class="value">312</div>
+              </div>
+            </div>
+            <svg class="stand" viewBox="0 0 300 100" aria-hidden="true">
+              <ellipse cx="150" cy="78" rx="142" ry="20" fill="var(--table)"/>
+              <ellipse cx="150" cy="74" rx="98" ry="13" fill="var(--shade)"/>
+              <path d="M108 20 A42 10 0 0 1 192 20 L178 44 C178 52 204 54 228 62
+                       A78 13 0 0 1 72 62 C96 54 122 52 122 44 Z"
+                    fill="var(--stand)" stroke="var(--gold)" stroke-width="0.5"/>
+            </svg>
+          </div>
+          <p class="label cap">1 row &middot; 8 ms</p>
+        </div>
+        <div class="set">
+          <span class="label">Somebody asked</span>
+          <p class="display question">What did we invoice in July?</p>
+          <div class="rig">
+            <div class="ball">
+              <div class="veil"><i></i><i></i><i></i><i></i></div>
+              <div class="sheen"></div>
+              <div class="inside">
+                <div class="sql">SELECT sum(cents) / 100.0<br>FROM invoices WHERE issued_on<br>BETWEEN '2026-07-01' AND '2026-07-31'</div>
+                <div class="value">$84,910</div>
+              </div>
+            </div>
+            <svg class="stand" viewBox="0 0 300 100" aria-hidden="true">
+              <ellipse cx="150" cy="78" rx="142" ry="20" fill="var(--table)"/>
+              <ellipse cx="150" cy="74" rx="98" ry="13" fill="var(--shade)"/>
+              <path d="M108 20 A42 10 0 0 1 192 20 L178 44 C178 52 204 54 228 62
+                       A78 13 0 0 1 72 62 C96 54 122 52 122 44 Z"
+                    fill="var(--stand)" stroke="var(--gold)" stroke-width="0.5"/>
+            </svg>
+          </div>
+          <p class="label cap">1 row &middot; 26 ms</p>
+        </div>
+        <div class="set">
+          <span class="label">Somebody asked</span>
+          <p class="display question">How many chats are still waiting on a reply?</p>
+          <div class="rig">
+            <div class="ball">
+              <div class="veil"><i></i><i></i><i></i><i></i></div>
+              <div class="sheen"></div>
+              <div class="inside">
+                <div class="sql">SELECT count(*) FROM chats<br>WHERE replied_at IS NULL</div>
+                <div class="value">26</div>
+              </div>
+            </div>
+            <svg class="stand" viewBox="0 0 300 100" aria-hidden="true">
+              <ellipse cx="150" cy="78" rx="142" ry="20" fill="var(--table)"/>
+              <ellipse cx="150" cy="74" rx="98" ry="13" fill="var(--shade)"/>
+              <path d="M108 20 A42 10 0 0 1 192 20 L178 44 C178 52 204 54 228 62
+                       A78 13 0 0 1 72 62 C96 54 122 52 122 44 Z"
+                    fill="var(--stand)" stroke="var(--gold)" stroke-width="0.5"/>
+            </svg>
+          </div>
+          <p class="label cap">1 row &middot; 6 ms</p>
+        </div>
+        <div class="set">
+          <span class="label">Somebody asked</span>
+          <p class="display question">Which service gets asked for most often?</p>
+          <div class="rig">
+            <div class="ball">
+              <div class="veil"><i></i><i></i><i></i><i></i></div>
+              <div class="sheen"></div>
+              <div class="inside">
+                <div class="sql">SELECT name FROM services s<br>JOIN bookings b ON b.service_id = s.id<br>GROUP BY 1 ORDER BY count(*) DESC LIMIT 1</div>
+                <div class="value">Faucet repair</div>
+              </div>
+            </div>
+            <svg class="stand" viewBox="0 0 300 100" aria-hidden="true">
+              <ellipse cx="150" cy="78" rx="142" ry="20" fill="var(--table)"/>
+              <ellipse cx="150" cy="74" rx="98" ry="13" fill="var(--shade)"/>
+              <path d="M108 20 A42 10 0 0 1 192 20 L178 44 C178 52 204 54 228 62
+                       A78 13 0 0 1 72 62 C96 54 122 52 122 44 Z"
+                    fill="var(--stand)" stroke="var(--gold)" stroke-width="0.5"/>
+            </svg>
+          </div>
+          <p class="label cap">1 row &middot; 63 ms</p>
+        </div>
+        <div class="set">
+          <span class="label">Somebody asked</span>
+          <p class="display question">How many homes were built before 1950?</p>
+          <div class="rig">
+            <div class="ball">
+              <div class="veil"><i></i><i></i><i></i><i></i></div>
+              <div class="sheen"></div>
+              <div class="inside">
+                <div class="sql">SELECT count(*) FROM homes<br>WHERE built_in &lt; 1950</div>
+                <div class="value">3,908</div>
+              </div>
+            </div>
+            <svg class="stand" viewBox="0 0 300 100" aria-hidden="true">
+              <ellipse cx="150" cy="78" rx="142" ry="20" fill="var(--table)"/>
+              <ellipse cx="150" cy="74" rx="98" ry="13" fill="var(--shade)"/>
+              <path d="M108 20 A42 10 0 0 1 192 20 L178 44 C178 52 204 54 228 62
+                       A78 13 0 0 1 72 62 C96 54 122 52 122 44 Z"
+                    fill="var(--stand)" stroke="var(--gold)" stroke-width="0.5"/>
+            </svg>
+          </div>
+          <p class="label cap">1 row &middot; 22 ms</p>
+        </div>
+        <div class="set">
+          <span class="label">Somebody asked</span>
+          <p class="display question">How long does a first reply take, typically?</p>
+          <div class="rig">
+            <div class="ball">
+              <div class="veil"><i></i><i></i><i></i><i></i></div>
+              <div class="sheen"></div>
+              <div class="inside">
+                <div class="sql">SELECT percentile_cont(0.5) WITHIN GROUP<br>(ORDER BY replied_at - created_at)<br>FROM chats</div>
+                <div class="value">1h 38m</div>
+              </div>
+            </div>
+            <svg class="stand" viewBox="0 0 300 100" aria-hidden="true">
+              <ellipse cx="150" cy="78" rx="142" ry="20" fill="var(--table)"/>
+              <ellipse cx="150" cy="74" rx="98" ry="13" fill="var(--shade)"/>
+              <path d="M108 20 A42 10 0 0 1 192 20 L178 44 C178 52 204 54 228 62
+                       A78 13 0 0 1 72 62 C96 54 122 52 122 44 Z"
+                    fill="var(--stand)" stroke="var(--gold)" stroke-width="0.5"/>
+            </svg>
+          </div>
+          <p class="label cap">1 row &middot; 47 ms</p>
+        </div>
+        <div class="set">
+          <span class="label">Somebody asked</span>
+          <p class="display question">What is a booking worth on average?</p>
+          <div class="rig">
+            <div class="ball">
+              <div class="veil"><i></i><i></i><i></i><i></i></div>
+              <div class="sheen"></div>
+              <div class="inside">
+                <div class="sql">SELECT round(avg(cents) / 100.0, 2)<br>FROM bookings WHERE cents &gt; 0</div>
+                <div class="value">$412.60</div>
+              </div>
+            </div>
+            <svg class="stand" viewBox="0 0 300 100" aria-hidden="true">
+              <ellipse cx="150" cy="78" rx="142" ry="20" fill="var(--table)"/>
+              <ellipse cx="150" cy="74" rx="98" ry="13" fill="var(--shade)"/>
+              <path d="M108 20 A42 10 0 0 1 192 20 L178 44 C178 52 204 54 228 62
+                       A78 13 0 0 1 72 62 C96 54 122 52 122 44 Z"
+                    fill="var(--stand)" stroke="var(--gold)" stroke-width="0.5"/>
+            </svg>
+          </div>
+          <p class="label cap">1 row &middot; 31 ms</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="pad plain" style="padding-top: 24px; padding-bottom: 24px;
+              border-top: 1px solid var(--line); display: flex; justify-content: space-between;
+              flex-wrap: wrap; gap: 12px">
+    <span>MIT license</span>
+    <span>Built at <a href="https://houseaccount.com">HouseAccount</a></span>
+  </div>
+</div>
+<script>
+  /* One reading at a time, told on a timer: the smoke thins, the statement and then the answer
+     surface, they are held, the smoke gathers again, and the next question takes its place. */
+  var deck = document.querySelector('.deck')
+  var count = deck.children.length
+  var at = Math.floor(Math.random() * count)
+  var still = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+  deck.dataset.pick = at
+  deck.dataset.phase = 'veiled'
+
+  if (still) {
+    deck.dataset.phase = 'open'
+  } else {
+    var tell = function () {
+      setTimeout(function () { deck.dataset.phase = 'open' }, 1200)
+      setTimeout(function () { deck.dataset.phase = 'veiled' }, 9000)
+      setTimeout(function () {
+        at = (at + 1) % count
+        deck.dataset.pick = at
+        tell()
+      }, 12200)
+    }
+    tell()
+  }
+</script>
+</body>
+</html>
