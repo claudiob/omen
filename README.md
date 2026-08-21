@@ -112,7 +112,7 @@ same rows: `Inquiry.all` carries no type condition, and `to_partial_path` become
 
 ```ruby
 class Inquiry < Omen::Reading
-  belongs_to :agent
+  belongs_to :user
 end
 ```
 
