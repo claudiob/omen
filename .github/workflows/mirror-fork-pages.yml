@@ -1,14 +1,13 @@
-name: Mirror gh-pages to the fork
+name: Mirror gh-pages to the HouseAccountEng fork
 
-# No workflow_dispatch or schedule: GitHub honours those only on the default branch.
-# push works on any branch, including one never merged to default.
+# A trigger only; the companion on the default branch carries the schedule and
+# the manual button, since GitHub honours workflow_dispatch and schedule only
+# for workflow files on the default branch. push works on any branch.
 on:
   push:
     branches: [gh-pages]
 
 jobs:
   mirror:
-    # Must be fully qualified. The `./.github/...` shorthand would resolve against
-    # the caller's ref (gh-pages), where mirror-fork.yml does not exist.
-    uses: claudiob/omen/.github/workflows/mirror-fork.yml@main
+    uses: claudiob/workflows/.github/workflows/mirror-fork.yml@main
     secrets: inherit
