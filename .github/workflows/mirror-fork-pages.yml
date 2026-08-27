@@ -1,0 +1,14 @@
+name: Mirror gh-pages to the fork
+
+# No workflow_dispatch or schedule: GitHub honours those only on the default branch.
+# push works on any branch, including one never merged to default.
+on:
+  push:
+    branches: [gh-pages]
+
+jobs:
+  mirror:
+    # Must be fully qualified. The `./.github/...` shorthand would resolve against
+    # the caller's ref (gh-pages), where mirror-fork.yml does not exist.
+    uses: claudiob/omen/.github/workflows/mirror-fork.yml@main
+    secrets: inherit
