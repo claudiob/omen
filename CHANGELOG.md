@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 For more information about changelogs, check [Keep a Changelog](http://keepachangelog.com) and
 [Vandamme](http://tech-angels.github.io/vandamme).
 
-## 0.10.0 - 2026-10-02
+## [Unreleased]
 
 * [Change] The roles a reading runs as read every schema in the connection's search path, not
   just `public`. A host that keeps some tables in a schema of its own (`archived.orders`) adds it
