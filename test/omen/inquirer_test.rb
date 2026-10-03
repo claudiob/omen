@@ -20,6 +20,27 @@ class Omen::InquirerTest < ActiveSupport::TestCase
     end
   end
 
+  # A host that keeps tables in a schema of its own puts it in the search path, and the role
+  # reads there too; a name in the path the database has not got is left out rather than
+  # refused.
+  test 'the role reads every schema the search path names' do
+    ApplicationRecord.with_connection do |connection|
+      connection.execute 'CREATE SCHEMA IF NOT EXISTS archived'
+      searched = connection.schema_search_path
+      connection.schema_search_path = '"$user", public, archived'
+      said = Omen::Grants.statements(connection, %w[ somebody ]) +
+             Omen::Grants.narrowed(connection, 'omen_inquirer', %w[ somebody ])
+
+      assert_includes said, 'GRANT USAGE ON SCHEMA "public" TO "omen_inquirer"'
+      assert_includes said, 'GRANT SELECT ON ALL TABLES IN SCHEMA "archived" TO "omen_inquirer"'
+      assert_equal 2, said.count('GRANT USAGE ON SCHEMA "archived" TO "omen_inquirer"')
+      refute(said.any? { |statement| statement.include? '$user' })
+    ensure
+      connection.schema_search_path = searched
+      connection.execute 'DROP SCHEMA IF EXISTS archived'
+    end
+  end
+
   # A managed database refuses `NOSUPERUSER` outright -- only a superuser may say it -- and that
   # one refusal used to discard the grants, the revocations and both functions behind it. The
   # refusal is spelled differently here, since the user running these tests is a superuser and
