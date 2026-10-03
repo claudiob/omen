@@ -5,13 +5,6 @@ All notable changes to this project will be documented in this file.
 For more information about changelogs, check [Keep a Changelog](http://keepachangelog.com) and
 [Vandamme](http://tech-angels.github.io/vandamme).
 
-## [Unreleased]
-
-* [Change] The roles a reading runs as read every schema in the connection's search path, not
-  just `public`. A host that keeps some tables in a schema of its own (`archived.orders`) adds it
-  to `schema_search_path` in config/database.yml, and its readings can name those tables too.
-  A name in the path the database has not got, Postgres' own `"$user"` for one, is left out.
-
 ## 0.9.0 - 2026-09-18
 
 * [Fix] An answer landing touches the reading it belongs to, so a page watching one refreshes

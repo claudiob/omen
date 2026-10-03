@@ -20,7 +20,9 @@ module Omen
       [
         *made(connection, Omen.config.narrow_role),
         *members.map { |member| "GRANT #{role} TO #{connection.quote_table_name member}" },
-        *schemas(connection).flat_map { |schema| read role, schema },
+        "GRANT USAGE ON SCHEMA public TO #{role}",
+        "GRANT SELECT ON ALL TABLES IN SCHEMA public TO #{role}",
+        "ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO #{role}",
         *revoked(connection, role),
         *Omen::Renamed.statements,
         *Omen::TimeZone.statements(connection),
@@ -40,28 +42,8 @@ module Omen
       role = connection.quote_table_name name
       [
         *members.map { |member| apart role, connection.quote_table_name(member) },
-        *schemas(connection).map { |schema| "GRANT USAGE ON SCHEMA #{schema} TO #{role}" },
+        "GRANT USAGE ON SCHEMA public TO #{role}",
       ]
-    end
-
-    # The schemas a statement names a table of without saying which, quoted: the connection's
-    # search path, which is `public` alone unless the host put more in it, less any it names
-    # that the database has not got (Postgres' own `"$user"`, for one).
-    # @param connection [ActiveRecord::ConnectionAdapters::AbstractAdapter] a writing one.
-    # @return [Array<String>] each schema, quoted, in the order the path searches them.
-    def self.schemas(connection)
-      searched = connection.schema_search_path.split(',').map { |schema| schema.strip.delete '"' }
-      (searched & connection.schema_names).map { |schema| connection.quote_table_name schema }
-    end
-
-    # What a role may read of one schema: every table in it, and every table made there later.
-    # @param role [String] the role, quoted.
-    # @param schema [String] the schema, quoted.
-    # @return [Array<String>] the statements to run, in order.
-    def self.read(role, schema)
-      [ "GRANT USAGE ON SCHEMA #{schema} TO #{role}",
-        "GRANT SELECT ON ALL TABLES IN SCHEMA #{schema} TO #{role}",
-        "ALTER DEFAULT PRIVILEGES IN SCHEMA #{schema} GRANT SELECT ON TABLES TO #{role}", ]
     end
 
     # @param role [String] the role, quoted.
