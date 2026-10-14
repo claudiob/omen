@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 For more information about changelogs, check [Keep a Changelog](http://keepachangelog.com) and
 [Vandamme](http://tech-angels.github.io/vandamme).
 
-## 0.10.0 - 2026-10-14
+## 0.10.1 - 2026-10-14
 
 * [Change] The narrowed role is granted the connection's current schema rather than `public`,
   so a host keeping its tables in a schema of its own -- sharing a database with another app,
