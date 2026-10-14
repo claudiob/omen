@@ -1,6 +1,12 @@
 require 'test_helper'
 
 class Omen::WordedTest < ActiveSupport::TestCase
+  test 'the sentences ship with the gem, not only with its repo' do
+    packaged = Gem::Specification.load(File.expand_path('../../../omen.gemspec', __dir__)).files
+
+    assert_includes packaged, 'config/locales/omen.en.yml'
+  end
+
   test 'an answer with no statement is its note, and one that failed is sorry' do
     assert_equal 'Which month do you mean?', answered(note: ' Which month   do you mean? ').to_s
     refused = answered sql: 'SELECT 1', error: 'refused'

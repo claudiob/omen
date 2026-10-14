@@ -17,7 +17,7 @@ Gem::Specification.new do |spec|
   spec.required_ruby_version         = '>= 3'
 
   spec.files = Dir.chdir(File.expand_path(__dir__)) do
-    Dir['{app,db,lib}/**/*', 'CHANGELOG.md', 'INSTRUCTIONS.md', 'LICENSE.txt', 'README.md']
+    Dir['{app,config,db,lib}/**/*', 'CHANGELOG.md', 'INSTRUCTIONS.md', 'LICENSE.txt', 'README.md']
   end
 
   spec.add_dependency 'active_job-performs' # to answer a question outside the request
