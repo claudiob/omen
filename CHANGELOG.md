@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 For more information about changelogs, check [Keep a Changelog](http://keepachangelog.com) and
 [Vandamme](http://tech-angels.github.io/vandamme).
 
+## 0.11.1 - 2026-10-14
+
+* [Fix] The sentences an answer reads as ship with the gem
+
+  0.11.0 kept them in `config/locales`, which the gem left out of what it packages, so a host
+  read `Translation missing: en.omen.figures` where an answer's figures belonged.
+
 ## 0.11.0 - 2026-10-14
 
 * [Feature] An answer reads as words, and a reading as the turns of a chat
