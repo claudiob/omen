@@ -15,6 +15,9 @@ module Omen
     # How many rows of one answer a page will show.
     attr_accessor :maximum_rows
 
+    # How many of those rows an answer's words read out before saying there are more.
+    attr_accessor :rows_read_out
+
     # How many turns of a thread travel with the next question.
     attr_accessor :remembered
 
@@ -29,6 +32,7 @@ module Omen
       @narrow_role = 'omen_inquirer'
       @claude_model = 'claude-opus-5'
       @maximum_rows = 100
+      @rows_read_out = 8
       @remembered = 5
       @schema_path = 'db/schema.rb'
     end

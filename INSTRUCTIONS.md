@@ -124,6 +124,7 @@ writes it with each line commented out, as the list of what there is to say.
 |---|---|
 | `narrow_role` | `'omen_inquirer'` |
 | `remembered` | `5`, the turns of a thread that travel with the next question |
+| `rows_read_out` | `8`, the rows of an answer its words read out before saying there are more |
 | `notes` | none, so the prompt says nothing about this app beyond its schema |
 
 ## What a host builds on top

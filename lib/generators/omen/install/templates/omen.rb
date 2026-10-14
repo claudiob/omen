@@ -23,6 +23,9 @@ Omen.configure do |config|
   # there are more without counting them.
   # config.maximum_rows = 100
 
+  # How many of those rows an answer's words read out before saying there are more.
+  # config.rows_read_out = 8
+
   # How many turns of a thread travel with the next question. A thread nobody clears would
   # otherwise carry its whole history into each one, and be charged for it again each time.
   # config.remembered = 5

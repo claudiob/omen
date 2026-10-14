@@ -1,0 +1,9 @@
+en:
+  omen:
+    failed: Sorry, I cannot answer that question.
+    nothing: Nothing matched that.
+    ran_long: That one ran long. Ask for less at a time.
+    more: more
+    one: "%{note}: %{figure}."
+    figures: "%{list}."
+    figure: "%{name} (%{details})"
