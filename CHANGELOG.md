@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 For more information about changelogs, check [Keep a Changelog](http://keepachangelog.com) and
 [Vandamme](http://tech-angels.github.io/vandamme).
 
+## 0.10.0 - 2026-10-14
+
+* [Change] The narrowed role is granted the connection's current schema rather than `public`,
+  so a host keeping its tables in a schema of its own -- sharing a database with another app,
+  each in a schema -- gets a role that reads its tables and no one else's. A host that never
+  set a search path reads `public` as before.
+
 ## 0.9.0 - 2026-09-18
 
 * [Fix] An answer landing touches the reading it belongs to, so a page watching one refreshes
