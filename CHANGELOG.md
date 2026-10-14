@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 For more information about changelogs, check [Keep a Changelog](http://keepachangelog.com) and
 [Vandamme](http://tech-angels.github.io/vandamme).
 
+## 0.11.0 - 2026-10-14
+
+* [Feature] An answer reads as words, and a reading as the turns of a chat
+
+  `answer.to_s` reads its figures out -- each name with its details in parentheses, the first
+  eight and `more` past them -- finishes its note where one figure answers it, says nothing
+  matched, that it ran long, or sorry where it failed. `reading.turns` pairs each question with
+  those words, `nil` while one is awaited. The sentences are `omen.*` keys a host rewords in its
+  own locale, and `config.rows_read_out` is how many figures are read out.
+
 ## 0.10.1 - 2026-10-14
 
 * [Change] The narrowed role is granted the connection's current schema rather than `public`,

@@ -18,7 +18,7 @@ statement returned is ever sent back.
 In your `Gemfile`, pinned to the current minor while this is still below 1.0:
 
 ```ruby
-gem 'omen', '~> 0.10.0'
+gem 'omen', '~> 0.11.0'
 ```
 
 Then four commands:
@@ -79,6 +79,12 @@ None of it is Omen's to create, and each is checked rather than assumed:
 the statement Claude wrote, the rows it found, and which of their headers held an encrypted
 column. `rails g omen:pages` writes the pages that draw all of that, into your app, for you to
 keep or replace.
+
+An answer also reads as words: `answer.to_s` is its figures read out -- `Ada (Lovelace) and
+Alan.`, `Contacts who signed in: 2.` -- or its note where it has none, and sorry where it
+failed. `reading.turns` pairs each question with those words, `nil` while one is awaited, which
+is all a chat bubble needs. The sentences are `omen.*` keys in the gem's locale file, so a host
+rewords them in its own.
 
 ## Two kinds of reading
 
