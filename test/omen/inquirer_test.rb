@@ -20,6 +20,20 @@ class Omen::InquirerTest < ActiveSupport::TestCase
     end
   end
 
+  test 'a host keeping its tables in a schema of its own is granted that schema, not public' do
+    ApplicationRecord.with_connection do |connection|
+      connection.execute 'CREATE SCHEMA elsewhere'
+      connection.schema_search_path = 'elsewhere'
+      said = Omen::Grants.statements connection, %w[ somebody ]
+
+      assert_includes said, 'GRANT USAGE ON SCHEMA "elsewhere" TO "omen_inquirer"'
+      assert_includes said, 'GRANT SELECT ON ALL TABLES IN SCHEMA "elsewhere" TO "omen_inquirer"'
+      assert(said.none? { |statement| statement.include? 'public' })
+    ensure
+      connection.schema_search_path = 'public'
+    end
+  end
+
   # A managed database refuses `NOSUPERUSER` outright -- only a superuser may say it -- and that
   # one refusal used to discard the grants, the revocations and both functions behind it. The
   # refusal is spelled differently here, since the user running these tests is a superuser and

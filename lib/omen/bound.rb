@@ -9,7 +9,7 @@ module Omen
       SELECT p.tablename, p.policyname, r.rolname FROM pg_policies p
         CROSS JOIN LATERAL unnest(p.roles) AS named(rolname)
         JOIN pg_roles r ON pg_has_role(r.oid, named.rolname::regrole::oid, 'USAGE')
-       WHERE p.permissive = 'RESTRICTIVE' AND p.schemaname = 'public' AND NOT r.rolsuper
+       WHERE p.permissive = 'RESTRICTIVE' AND p.schemaname = current_schema() AND NOT r.rolsuper
        ORDER BY p.tablename, p.policyname, r.rolname
     SQL
 

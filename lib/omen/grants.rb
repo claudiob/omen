@@ -17,12 +17,13 @@ module Omen
     # @return [Array<String>] the statements to run, in order.
     def self.statements(connection, members)
       role = connection.quote_table_name Omen.config.narrow_role
+      read = schema connection
       [
         *made(connection, Omen.config.narrow_role),
         *members.map { |member| "GRANT #{role} TO #{connection.quote_table_name member}" },
-        "GRANT USAGE ON SCHEMA public TO #{role}",
-        "GRANT SELECT ON ALL TABLES IN SCHEMA public TO #{role}",
-        "ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO #{role}",
+        "GRANT USAGE ON SCHEMA #{read} TO #{role}",
+        "GRANT SELECT ON ALL TABLES IN SCHEMA #{read} TO #{role}",
+        "ALTER DEFAULT PRIVILEGES IN SCHEMA #{read} GRANT SELECT ON TABLES TO #{role}",
         *revoked(connection, role),
         *Omen::Renamed.statements,
         *Omen::TimeZone.statements(connection),
@@ -42,9 +43,14 @@ module Omen
       role = connection.quote_table_name name
       [
         *members.map { |member| apart role, connection.quote_table_name(member) },
-        "GRANT USAGE ON SCHEMA public TO #{role}",
+        "GRANT USAGE ON SCHEMA #{schema connection} TO #{role}",
       ]
     end
+
+    # The schema a host keeps its tables in: the first of its search path, `public` by default.
+    # @param connection [ActiveRecord::ConnectionAdapters::AbstractAdapter] a writing one.
+    # @return [String] its name, quoted.
+    def self.schema(connection) = connection.quote_table_name connection.current_schema
 
     # @param role [String] the role, quoted.
     # @param member [String] the role that may enter it, quoted.
